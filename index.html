@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Octet — IPv4 workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { paper:'var(--paper)', ink:'var(--ink)', muted:'var(--muted)', line:'var(--line)', soft:'var(--soft)', edge:'var(--edge)', err:'var(--err)' },
+  fontFamily: {
+    serif:['"Playfair Display"','Georgia','"Times New Roman"','serif'],
+    sans:['-apple-system','BlinkMacSystemFont','"Segoe UI"','sans-serif'],
+    mono:['ui-monospace','SFMono-Regular','Menlo','monospace']
+  }
+}}};
+</script>
+<style>
+:root{--paper:#fcfcfc;--ink:#111111;--muted:#77736e;--line:#e7e5e2;--soft:#f3f2ef;--edge:#cfccc7;--err:#9a352b;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#131312;--ink:#f1efec;--muted:#9b968f;--line:#2c2b29;--soft:#1d1c1b;--edge:#4a4844;--err:#e58b80;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#131312;--ink:#f1efec;--muted:#9b968f;--line:#2c2b29;--soft:#1d1c1b;--edge:#4a4844;--err:#e58b80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:auto}
+body{background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+.tbl{overflow-x:auto}
+</style>
+</head>
+<body class="font-sans">
+<div class="mx-auto w-[min(100%-36px,960px)]">
+
+<header class="flex h-20 items-center justify-between border-b border-line">
+  <span class="font-serif text-xl tracking-tight">Octet</span>
+  <nav class="flex gap-5 text-sm text-muted">
+    <a href="#converter" class="hover:text-ink">Converter</a>
+    <a href="#subnet" class="hover:text-ink">Subnets</a>
+    <a href="#reference" class="hover:text-ink">Reference</a>
+    <a href="#practice" class="hover:text-ink">Practice</a>
+  </nav>
+</header>
+
+<main>
+<section class="pt-24 pb-16 sm:pt-32">
+  <h1 class="max-w-3xl font-serif text-5xl font-normal leading-[1.02] tracking-[-0.04em] sm:text-7xl">Four numbers.<br>Thirty-two bits.</h1>
+  <p class="mt-7 max-w-lg text-[15px] leading-8 text-muted">Convert an IPv4 address between decimal and binary, in either direction, and flip the bits yourself to see how each value is built. Below it you will find a subnet calculator, a reference sheet and a short drill.</p>
+  <a href="#converter" class="mt-9 inline-block border-b border-ink pb-1 text-sm tracking-wide">Open the converter</a>
+</section>
+
+<!-- Converter -->
+<section id="converter" class="border-t border-line py-24">
+  <h2 class="font-serif text-3xl font-normal tracking-tight">Address converter</h2>
+  <p class="mt-3 max-w-md text-sm leading-7 text-muted">Pick a direction, type an address, and the result updates as you type.</p>
+
+  <div class="mt-10 flex gap-8 border-b border-line text-sm" role="tablist">
+    <button id="tab-dec" type="button" role="tab" class="pb-3">Octet → Binary</button>
+    <button id="tab-bin" type="button" role="tab" class="pb-3">Binary → Octet</button>
+  </div>
+
+  <div class="mt-8">
+    <label id="ipLabel" for="ip" class="mb-3 block text-sm text-muted"></label>
+    <input id="ip" type="text" autocomplete="off" spellcheck="false" aria-describedby="err"
+      class="h-14 w-full border border-edge bg-transparent px-4 font-mono text-base text-ink outline-none focus:border-ink">
+    <p id="err" role="alert" class="mt-3 min-h-[20px] text-sm text-err"></p>
+  </div>
+
+  <div id="res" class="mt-6">
+    <p id="bigLabel" class="text-sm text-muted"></p>
+    <div id="big" class="mt-3"></div>
+    <dl id="facts" class="mt-10 grid grid-cols-1 gap-x-8 gap-y-5 border-t border-line pt-6 sm:grid-cols-3"></dl>
+    <p class="mt-12 text-sm text-muted">Each box is one bit. Select a bit to flip it and watch the decimal value change.</p>
+    <div id="cards" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2"></div>
+  </div>
+</section>
+
+<!-- Subnet -->
+<section id="subnet" class="border-t border-line py-24">
+  <h2 class="font-serif text-3xl font-normal tracking-tight">Subnet calculator</h2>
+  <p class="mt-3 max-w-md text-sm leading-7 text-muted">Enter an address with a prefix (192.168.1.10/24) or a mask (192.168.1.10 255.255.255.0).</p>
+  <label for="cidr" class="mb-3 mt-10 block text-sm text-muted">Address and prefix</label>
+  <input id="cidr" type="text" value="192.168.1.10/24" autocomplete="off" spellcheck="false"
+    class="h-14 w-full border border-edge bg-transparent px-4 font-mono text-base text-ink outline-none focus:border-ink">
+  <p id="cerr" role="alert" class="mt-3 min-h-[20px] text-sm text-err"></p>
+
+  <div id="sres" class="mt-6">
+    <div id="stop" class="grid grid-cols-1 gap-8 border-b border-line pb-8 sm:grid-cols-3"></div>
+    <dl id="srows" class="mt-8 grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2"></dl>
+
+    <h3 class="mt-14 font-serif text-xl font-normal">Network bits and host bits</h3>
+    <p class="mt-2 text-sm text-muted">Dark bits belong to the network, light bits to the host.</p>
+    <div id="sbits" class="mt-5 space-y-5 bg-soft p-5 font-mono text-[13px] leading-6 sm:text-base"></div>
+
+    <h3 class="mt-14 font-serif text-xl font-normal">Split into smaller subnets</h3>
+    <div class="mt-4 flex items-center gap-3 text-sm text-muted">
+      <label for="np">New prefix /</label>
+      <input id="np" type="number" min="0" max="32" class="h-11 w-24 border border-edge bg-transparent px-3 font-mono text-ink outline-none focus:border-ink">
+    </div>
+    <p id="nmsg" class="mt-3 min-h-[20px] text-sm text-muted"></p>
+    <div class="tbl mt-2"><table class="w-full min-w-[560px] text-left font-mono text-[13px]">
+      <thead class="text-muted"><tr><th class="py-2 pr-4 font-normal">#</th><th class="py-2 pr-4 font-normal">Network</th><th class="py-2 pr-4 font-normal">Usable range</th><th class="py-2 font-normal">Broadcast</th></tr></thead>
+      <tbody id="ntable"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- Reference -->
+<section id="reference" class="border-t border-line py-24">
+  <h2 class="font-serif text-3xl font-normal tracking-tight">Reference</h2>
+  <div class="mt-10 grid grid-cols-1 gap-14 md:grid-cols-2">
+    <div>
+      <h3 class="font-serif text-xl font-normal">Prefix lengths</h3>
+      <div class="tbl mt-4"><table class="w-full text-left font-mono text-[13px]">
+        <thead class="text-muted"><tr><th class="py-2 pr-3 font-normal">Prefix</th><th class="py-2 pr-3 font-normal">Mask</th><th class="py-2 font-normal">Usable hosts</th></tr></thead>
+        <tbody id="ptable"></tbody>
+      </table></div>
+    </div>
+    <div class="space-y-12">
+      <div>
+        <h3 class="font-serif text-xl font-normal">Special ranges</h3>
+        <dl class="mt-4 space-y-3 text-sm">
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">10.0.0.0/8</dt><dd class="text-right text-muted">Private</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">172.16.0.0/12</dt><dd class="text-right text-muted">Private</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">192.168.0.0/16</dt><dd class="text-right text-muted">Private</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">100.64.0.0/10</dt><dd class="text-right text-muted">Carrier-grade NAT</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">127.0.0.0/8</dt><dd class="text-right text-muted">Loopback</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">169.254.0.0/16</dt><dd class="text-right text-muted">Link-local (APIPA)</dd></div>
+          <div class="flex justify-between gap-4 border-b border-line pb-3"><dt class="font-mono">224.0.0.0/4</dt><dd class="text-right text-muted">Multicast</dd></div>
+        </dl>
+      </div>
+      <div>
+        <h3 class="font-serif text-xl font-normal">Common ports</h3>
+        <dl class="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">22</dt><dd class="text-muted">SSH</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">53</dt><dd class="text-muted">DNS</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">80</dt><dd class="text-muted">HTTP</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">443</dt><dd class="text-muted">HTTPS</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">67/68</dt><dd class="text-muted">DHCP</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">123</dt><dd class="text-muted">NTP</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">161</dt><dd class="text-muted">SNMP</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">514</dt><dd class="text-muted">Syslog</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">500/4500</dt><dd class="text-muted">IPsec</dd></div>
+          <div class="flex justify-between border-b border-line pb-3"><dt class="font-mono">3389</dt><dd class="text-muted">RDP</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Practice -->
+<section id="practice" class="border-t border-line py-24">
+  <h2 class="font-serif text-3xl font-normal tracking-tight">Practice</h2>
+  <p class="mt-3 max-w-md text-sm leading-7 text-muted">Convert one octet at a time. Bit weights from left to right: 128, 64, 32, 16, 8, 4, 2, 1.</p>
+  <p id="qp" class="mt-10 font-serif text-4xl tracking-tight sm:text-5xl"></p>
+  <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+    <input id="qa" type="text" autocomplete="off" spellcheck="false" aria-label="Your answer"
+      class="h-14 min-w-0 flex-1 border border-edge bg-transparent px-4 font-mono text-base text-ink outline-none focus:border-ink">
+    <button id="qcheck" type="button" class="h-14 rounded-sm border border-ink bg-ink px-8 text-sm tracking-widest text-paper">Check answer</button>
+  </div>
+  <p id="qf" role="status" class="mt-4 min-h-[24px] text-sm"></p>
+  <div class="mt-2 flex gap-8 text-sm text-muted">
+    <button id="qnext" type="button" class="border-b border-muted pb-0.5">Next question</button>
+    <span id="qs">Score 0 of 0</span>
+  </div>
+</section>
+</main>
+
+<footer class="border-t border-line pb-10 pt-6 text-xs text-muted">Everything runs in your browser. Nothing you type is sent or stored.</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const W = [128,64,32,16,8,4,2,1];
+const b8 = n => n.toString(2).padStart(8,'0');
+const oct = a => [a>>>24,(a>>>16)&255,(a>>>8)&255,a&255];
+const dot = a => oct(a).join('.');
+const bin = a => oct(a).map(b8).join('.');
+const hex = a => oct(a).map(n => n.toString(16).toUpperCase().padStart(2,'0')).join(':');
+const fromOct = o => ((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;
+const mk = p => p ? (0xFFFFFFFF << (32-p))>>>0 : 0;
+const ones = m => m.toString(2).replace(/0/g,'').length;
+const sepd = '<i class="not-italic text-muted">.</i>';
+
+function parseDec(s){
+  const p = s.trim().split('.');
+  if (p.length!==4 || p.some(x => !/^\d{1,3}$/.test(x))) return {e:'Enter four whole numbers separated by dots, for example 192.168.1.1.'};
+  const n = p.map(Number);
+  if (n.some(x => x>255)) return {e:'Each number must be between 0 and 255.'};
+  return {v:fromOct(n)};
+}
+function parseBin(s){
+  const t = s.trim().replace(/[.\s]/g,'');
+  if (!t || !/^[01]+$/.test(t)) return {e:'Use only 0 and 1. Dots and spaces between octets are fine.'};
+  if (t.length!==32) return {e:'An IPv4 address needs exactly 32 bits. You entered '+t.length+'.'};
+  return {v:fromOct([0,8,16,24].map(i => parseInt(t.slice(i,i+8),2)))};
+}
+
+/* ---------- Converter ---------- */
+let mode = 'dec', addr = fromOct([192,168,1,1]);
+const tabOn = 'border-b-2 border-ink pb-3 text-ink', tabOff = 'border-b-2 border-transparent pb-3 text-muted';
+
+function syncInput(){ $('ip').value = mode==='dec' ? dot(addr) : bin(addr); }
+function setMode(m){
+  mode = m;
+  $('tab-dec').className = m==='dec' ? tabOn : tabOff;
+  $('tab-bin').className = m==='bin' ? tabOn : tabOff;
+  $('tab-dec').setAttribute('aria-selected', m==='dec');
+  $('tab-bin').setAttribute('aria-selected', m==='bin');
+  $('ipLabel').textContent = m==='dec' ? 'IPv4 address in decimal' : 'IPv4 address in binary (32 bits)';
+  $('ip').placeholder = m==='dec' ? '192.168.1.1' : '11000000.10101000.00000001.00000001';
+  $('err').textContent = '';
+  syncInput(); render();
+}
+function onInput(){
+  const r = (mode==='dec' ? parseDec : parseBin)($('ip').value);
+  if (r.e){ $('err').textContent = r.e; $('res').hidden = true; return; }
+  $('err').textContent = ''; $('res').hidden = false; addr = r.v; render();
+}
+function render(){
+  const o = oct(addr), bs = o.map(b8);
+  $('res').hidden = false;
+  if (mode==='dec'){
+    $('bigLabel').textContent = 'Binary';
+    $('big').className = 'mt-3 flex flex-wrap font-mono text-[26px] leading-tight tracking-tight sm:text-5xl';
+    $('big').innerHTML = bs.map((x,i) => '<span>'+x+(i<3?sepd:'')+'</span>').join('');
+  } else {
+    $('bigLabel').textContent = 'Decimal';
+    $('big').className = 'mt-3 font-serif text-6xl leading-none tracking-tight sm:text-8xl';
+    $('big').innerHTML = o.join(sepd);
+  }
+  const facts = mode==='dec'
+    ? [['Hexadecimal',hex(addr)],['Integer',addr.toLocaleString('en-US')],['Decimal',dot(addr)]]
+    : [['Binary',bin(addr)],['Hexadecimal',hex(addr)],['Integer',addr.toLocaleString('en-US')]];
+  $('facts').innerHTML = facts.map(f => '<div><dt class="text-sm text-muted">'+f[0]+'</dt><dd class="mt-1 break-words font-mono text-sm">'+f[1]+'</dd></div>').join('');
+  $('cards').innerHTML = o.map((n,i) => {
+    const bits = bs[i].split('').map((c,j) =>
+      '<button type="button" data-b="'+(i*8+j)+'" aria-pressed="'+(c==='1')+'" aria-label="Octet '+(i+1)+', weight '+W[j]+', currently '+c+'. Flip bit" class="flex aspect-square items-center justify-center border font-mono text-base sm:text-lg '+(c==='1'?'border-ink bg-ink text-paper':'border-edge text-muted')+'">'+c+'</button>').join('');
+    const on = W.filter((w,j) => bs[i][j]==='1');
+    return '<div class="bg-soft p-5 sm:p-6"><div class="flex items-baseline justify-between"><span class="text-sm text-muted">Octet '+(i+1)+'</span><span class="font-serif text-5xl leading-none">'+n+'</span></div>'
+      + '<div class="mt-6 grid grid-cols-8 gap-1 text-center">'+W.map(w => '<span class="font-mono text-[10px] text-muted">'+w+'</span>').join('')+bits+'</div>'
+      + '<p class="mt-5 font-mono text-xs text-muted">'+(on.length ? on.join(' + ')+' = '+n : '0')+'</p></div>';
+  }).join('');
+}
+$('cards').addEventListener('click', e => {
+  const b = e.target.closest('[data-b]'); if (!b) return;
+  addr = (addr ^ (1 << (31 - Number(b.dataset.b))))>>>0;
+  $('err').textContent = ''; syncInput(); render();
+});
+$('tab-dec').onclick = () => setMode('dec');
+$('tab-bin').onclick = () => setMode('bin');
+$('ip').addEventListener('input', onInput);
+
+/* ---------- Subnets ---------- */
+function parseCidr(s){
+  const m = s.trim().match(/^([\d.]+)\s*(?:\/|\s)\s*([\d.]+)$/);
+  if (!m) return {e:'Enter an address and a prefix, for example 192.168.1.10/24.'};
+  const a = parseDec(m[1]); if (a.e) return a;
+  let p;
+  if (m[2].includes('.')){
+    const k = parseDec(m[2]); if (k.e) return {e:'The mask is not a valid dotted address.'};
+    p = ones(k.v);
+    if (mk(p) !== k.v) return {e:'That mask is not contiguous. A mask is a run of 1s followed by 0s.'};
+  } else {
+    p = Number(m[2]);
+    if (!Number.isInteger(p) || p<0 || p>32) return {e:'The prefix must be between 0 and 32.'};
+  }
+  return {a:a.v, p};
+}
+function calc(a,p){
+  const m = mk(p), w = (~m)>>>0, n = (a&m)>>>0, b = (n|w)>>>0, total = 2**(32-p);
+  let f=n+1, l=b-1, h=total-2;
+  if (p===32){ f=l=n; h=1; } else if (p===31){ f=n; l=b; h=2; }
+  return {m,w,n,b,f,l,h};
+}
+function inR(a,base,p){ return ((a & mk(p))>>>0) === base; }
+function kind(a){
+  const o = oct(a)[0];
+  if (a===0xFFFFFFFF) return 'Limited broadcast';
+  if (o===0) return 'This network';
+  if (o===10 || inR(a,fromOct([172,16,0,0]),12) || inR(a,fromOct([192,168,0,0]),16)) return 'Private';
+  if (inR(a,fromOct([100,64,0,0]),10)) return 'Carrier-grade NAT';
+  if (o===127) return 'Loopback';
+  if (inR(a,fromOct([169,254,0,0]),16)) return 'Link-local (APIPA)';
+  if (o>=224 && o<240) return 'Multicast';
+  if (o>=240) return 'Reserved';
+  return 'Public';
+}
+const cls = a => { const o = oct(a)[0]; return o<128?'A':o<192?'B':o<224?'C':o<240?'D (multicast)':'E (reserved)'; };
+function bitsMarked(a,p){
+  let k = 0;
+  return bin(a).split('').map(c => {
+    if (c==='.') return '<span class="text-muted">.</span>';
+    return '<span class="'+(k++<p?'font-medium text-ink':'text-muted')+'">'+c+'</span>';
+  }).join('');
+}
+let lastNet = null;
+function onCidr(){
+  const r = parseCidr($('cidr').value);
+  if (r.e){ $('cerr').textContent = r.e; $('sres').hidden = true; return; }
+  $('cerr').textContent = ''; $('sres').hidden = false;
+  const {a,p} = r, c = calc(a,p);
+  const big = (t,v) => '<div><p class="text-sm text-muted">'+t+'</p><p class="mt-2 break-words font-serif text-3xl leading-tight tracking-tight sm:text-4xl">'+v+'</p></div>';
+  $('stop').innerHTML = big('Network',dot(c.n)+'/'+p) + big('Broadcast',dot(c.b)) + big('Usable hosts',c.h.toLocaleString('en-US'));
+  const row = (t,v) => '<div class="flex justify-between gap-4 border-b border-line pb-3 text-sm"><dt class="text-muted">'+t+'</dt><dd class="text-right font-mono">'+v+'</dd></div>';
+  $('srows').innerHTML = row('Subnet mask',dot(c.m)) + row('Wildcard mask',dot(c.w)) + row('First host',dot(c.f)) + row('Last host',dot(c.l))
+    + row('Total addresses',(2**(32-p)).toLocaleString('en-US')) + row('Host bits',32-p) + row('Class',cls(a)) + row('Address type',kind(a));
+  const lab = t => '<p class="mb-1 font-sans text-xs text-muted">'+t+'</p>';
+  $('sbits').innerHTML = '<div>'+lab('Address')+'<div class="break-words">'+bitsMarked(a,p)+'</div></div>'
+    + '<div>'+lab('Subnet mask')+'<div class="break-words">'+bitsMarked(c.m,p)+'</div></div>'
+    + '<div>'+lab('Network address (address AND mask)')+'<div class="break-words">'+bitsMarked(c.n,p)+'</div></div>';
+  if (!lastNet || lastNet!==p){ $('np').value = Math.min(p+1,32); lastNet = p; }
+  split(c.n,p);
+}
+function split(n,p){
+  const q = Number($('np').value);
+  const body = $('ntable');
+  if (!Number.isInteger(q) || q<p || q>32){ $('nmsg').textContent = 'Choose a prefix between /'+p+' and /32.'; body.innerHTML=''; return; }
+  const count = 2**(q-p), step = 2**(32-q), shown = Math.min(count,64);
+  $('nmsg').textContent = count.toLocaleString('en-US')+' subnet'+(count>1?'s':'')+' of '+(step).toLocaleString('en-US')+' addresses each'+(count>shown?' (showing the first 64)':'')+'.';
+  let h = '';
+  for (let i=0;i<shown;i++){
+    const s = calc((n+i*step)>>>0,q);
+    h += '<tr class="border-t border-line"><td class="py-2 pr-4 text-muted">'+(i+1)+'</td><td class="py-2 pr-4">'+dot(s.n)+'/'+q+'</td><td class="py-2 pr-4">'+dot(s.f)+' – '+dot(s.l)+'</td><td class="py-2">'+dot(s.b)+'</td></tr>';
+  }
+  body.innerHTML = h;
+}
+$('cidr').addEventListener('input', onCidr);
+$('np').addEventListener('input', () => { const r = parseCidr($('cidr').value); if (!r.e) split(calc(r.a,r.p).n, r.p); });
+
+/* ---------- Reference ---------- */
+$('ptable').innerHTML = [8,12,16,20,22,23,24,25,26,27,28,29,30,31,32].map(p =>
+  '<tr class="border-t border-line"><td class="py-2 pr-3">/'+p+'</td><td class="py-2 pr-3">'+dot(mk(p))+'</td><td class="py-2">'+calc(0,p).h.toLocaleString('en-US')+'</td></tr>').join('');
+
+/* ---------- Practice ---------- */
+let q, tot = 0, ok = 0, answered = false;
+function nextQ(){
+  const toBin = Math.random() < .5, n = Math.floor(Math.random()*256);
+  q = {toBin, n}; answered = false;
+  $('qp').textContent = toBin ? 'Write '+n+' as 8 bits' : 'Convert '+b8(n)+' to decimal';
+  $('qa').value = ''; $('qa').placeholder = toBin ? '00000000' : '0'; $('qf').textContent = ''; $('qa').focus({preventScroll:true});
+}
+function check(){
+  const v = $('qa').value.trim();
+  if (!v || answered) return;
+  const right = q.toBin ? v===b8(q.n) : v===String(q.n);
+  answered = true; tot++; if (right) ok++;
+  $('qf').textContent = right ? 'Correct.' : 'Not quite. The answer is '+(q.toBin ? b8(q.n) : q.n)+'.';
+  $('qs').textContent = 'Score '+ok+' of '+tot;
+}
+$('qcheck').onclick = check;
+$('qnext').onclick = nextQ;
+$('qa').addEventListener('keydown', e => { if (e.key==='Enter') answered ? nextQ() : check(); });
+
+setMode('dec');
+onCidr();
+nextQ();
+$('qa').blur();
+</script>
+</body>
+</html>
